@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sist.mapper.challenge-mapper">
+	
+	<!-- 챌린지 목록 -->
+	<select id="challengeListData" resultType="ChallengeVO" parameterType="hashmap">
+		SELECT start_day,poster,title,id_leader,limit, num
+		FROM (SELECT start_day,poster,title,id_leader,limit,rownum as num
+		FROM (SELECT start_day,poster,title,id_leader,limit
+		FROM challenge ORDER BY start_day DESC))
+		WHERE num BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- 챌린지 목록 전체 페이지  -->
+	<select id="challengeTotalPage" resultType="int">
+		SELECT CEIL(COUNT(*)/12.0) FROM challenge
+	</select>
+	
+	<!-- 챌린지 cate별로 페이지 나눈 목록 -->
+	<select id="catechallengeData" resultType="ChallengeVO" parameterType="hashmap">
+		SELECT start_day,poster,title,id_leader,limit, num
+		FROM (SELECT start_day,poster,title,id_leader,limit,rownum as num
+		FROM (SELECT start_day,poster,title,id_leader,limit
+		FROM challenge WHERE cate=#{cate} ORDER BY start_day DESC))
+		WHERE num BETWEEN #{start} AND #{end}
+	</select>
+	
+	<!-- 도전 상세보기 -->
+	<select id="challengDetailData" resultType="ChallengeVO" parameterType="int">
+ 		SELECT no,name,subject,content,regdate,hit
+ 		FROM challenge
+ 		WHERE challenge_no=#{challenge_no}
+ 	</select>
+ 	
+ 	<!-- 새 도전 만들기 -->
+	<insert id="challengeInsert" parameterType="challengeVO">
+ 		INSERT INTO challenge VALUES(
+ 			challenge_no_seq.nextval,
+ 			#{start_day},
+ 			#{poster},
+ 			#{title},
+ 			#{limit},
+ 			#{content},
+ 			#{cate},
+ 			(SELECT id FROM home_user WHERE id=#{id})
+ 		)
+ 	</insert>
+ 	
+ 	
+ 	<!-- 도전 수정하기 -->
+ 	<update id="boardUpdate" parameterType="DataBoardVO">
+		UPDATE databoard4 SET
+		name=#{name},
+		subject=#{subject},
+		content=#{content}
+		<include refid="where-no"/>
+	</update>
+ 	
+ 	<!-- 도전 삭제하기 -->
+ 	<!-- 게시물이 삭제가 되면 업로드된 파일을 삭제 -->
+  <select id="boardGetInfoData" resultType="DataBoardVO" parameterType="int">
+    SELECT filename,filesize FROM databoard4
+    <include refid="where-no"/>
+  </select>
+  <!-- 본인일 경우에는 게시물을 삭제 -->
+  <delete id="boardDelete" parameterType="int">
+    DELETE FROM databoard4
+    <include refid="where-no"/>
+  </delete>
+ 	
+ 	
+ 	<!-- 도전 참여하기 -->
+ 	<insert id="challengeParticipate" parameterType="challengeVO">
+ 		INSERT INTO challenge_participation VALUES(
+ 		#{challenge_no},
+ 		#{challenge_id}
+ 		);
+ 	</insert>
+ 	
+ 	<!-- 도전 찾기  -->
+	<select id="boardFindData" resultType="DataBoardVO" parameterType="hashmap">
+		SELECT no,subject,name,TO_CHAR(regdate,'YYYY-MM-DD') as dbday, hit
+		FROM databoard4
+		WHERE ${fd} LIKE '%'||#{ss}||'%'
+	</select>
+	<select id="boardFindCount" resultType="int" parameterType="hashmap">
+		SELECT COUNT(*)
+		FROM databoard4
+		WHERE ${fd} LIKE '%'||#{ss}||'%'
+	</select>
+
+
+<!-- 
+INSERT INTO challenge 
+VALUES(
+1,'food','2020-10-05','저탄고지 식단 도전','30','https://lh3.googleusercontent.com/proxy/TSs5eYZGwdhsBOurf1892oXEmS1W9QgG_aYG9pJlYD4Gz3eQKHCHF2hqFIeIyegqlUoPC_qtYwPFZE0rQ-dwSa7VA8ulZwd5OLMhZWo2Z3OnMo88n9syA1eUp0i4',
+'저탄고지 식단 함께 도전해요!','홍길동');
+ -->
+
+</mapper>
